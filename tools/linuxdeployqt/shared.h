@@ -48,6 +48,8 @@ extern bool fhsLikeMode;
 extern QString fhsPrefix;
 extern QStringList extraQtPlugins;
 extern QStringList excludeLibs;
+extern QString oldLdPath;
+extern QString newLdPath;
 
 class LibraryInfo
 {

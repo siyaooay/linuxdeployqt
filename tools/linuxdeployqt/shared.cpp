@@ -56,6 +56,8 @@ bool runStripEnabled = true;
 bool bundleAllButCoreLibs = false;
 bool bundleEverything = false;
 bool fhsLikeMode = false;
+QString oldLdPath;
+QString newLdPath;
 QString fhsPrefix;
 bool alwaysOwerwriteEnabled = false;
 QStringList librarySearchPath;
@@ -889,9 +891,28 @@ QString copyDylib(const LibraryInfo &library, const QString path)
 
 QString runPatchelf(QStringList options)
 {
+//    std::string command = "export LD_LIBRARY_PATH=;patchelf";
+//    for(const auto& arg : args) {
+//        command += " ";
+//        command += arg;
+//    }
+//
+//    setenv("LD_LIBRARY_PATH",oldLdPath.toUtf8().constData(),1);
+//    int result = std::system(command.c_str());
+//
+//    if (result != 0) {
+//        std::string errorMessage = getErrorMessage(result);
+//        std::cout << "设置RPATH失败！错误码：" << result << "，错误信息：" << errorMessage << std::endl;
+//        LogError() << "runPatchelf:" ;
+//    } else {
+//    }
+//    setenv("LD_LIBRARY_PATH",newLdPath.toUtf8().constData(),1);
+//    return QString::number(result);
     QProcess patchelftool;
     LogDebug() << "options:" << options;
+    setenv("LD_LIBRARY_PATH",oldLdPath.toUtf8().constData(),1);
     patchelftool.start("patchelf", options);
+
     if (!patchelftool.waitForStarted()) {
         if(patchelftool.errorString().contains("No such file or directory")){
             LogError() << "Could not start patchelf.";
@@ -908,6 +929,7 @@ QString runPatchelf(QStringList options)
         // LogError() << "runPatchelf:" << patchelftool.readAllStandardOutput();
         // exit(1); // Do not exit because this could be a script that patchelf can't work on
     }
+    setenv("LD_LIBRARY_PATH",newLdPath.toUtf8().constData(),1);
     return(patchelftool.readAllStandardOutput().trimmed());
 }
 
@@ -1309,7 +1331,9 @@ DeploymentInfo deployQtLibraries(const QString &appDirPath, const QStringList &a
     * and warning about them not being taken into consideration */
    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
    QString oldPath = env.value("LD_LIBRARY_PATH");
+   oldLdPath = oldPath;
    QString newPath = libraryPath + ":" + oldPath; // FIXME: If we use a ldd replacement, we still need to observe this path
+   newLdPath = newPath;
    LogDebug() << "Changed LD_LIBRARY_PATH:" << newPath;
    setenv("LD_LIBRARY_PATH",newPath.toUtf8().constData(),1);
 
